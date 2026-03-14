@@ -1,160 +1,173 @@
-**Overview:**
+# DiabetesAI — Diabetes Risk Prediction Web Application
 
-The Diabetes Prediction Web Application is a data-driven tool designed to predict the likelihood of diabetes based on user inputs such as glucose levels, blood pressure, BMI, and other health indicators. This project leverages machine learning and data preprocessing techniques to provide accurate predictions while offering an interactive and user-friendly interface.
+A full-stack, machine learning-powered web application that predicts diabetes risk based on clinical health parameters. Built with Django and LightGBM, featuring a premium UI designed to match professional SaaS standards.
 
-The goal of this project was to build a complete end-to-end solution for predicting diabetes, including a robust backend for data processing and storage, a trained ML model, and a frontend for user interaction.
+**Live Demo:** [https://raghavchandna.pythonanywhere.com/](https://raghavchandna.pythonanywhere.com/)
 
-**Why This Project?**
+---
 
-Diabetes is a growing health concern worldwide, and early detection plays a crucial role in its management. This project:
+## Overview
 
-- Provides an easy-to-use platform for individuals to assess their risk of diabetes.
-- Showcases the power of machine learning in solving real-world problems.
+Diabetes Predictor (DiabetesAI) is an end-to-end diabetes risk prediction tool that takes 8 clinical parameters as input and returns an instant risk assessment powered by a gradient-boosted machine learning model. The application includes user authentication, prediction history tracking, a health dashboard with charts, and a fully responsive mobile interface.
 
-**Workflow of the Diabetes Prediction Web Application:**
+---
 
-1. **User Interaction**
+## Model Performance
 
-   **User Registration/Login:**
-   - Users start by registering an account or logging in if they already have one.
-   - Once logged in, users access the dashboard and the prediction form.
+| Metric | Score |
+|---|---|
+| Accuracy | 90% |
+| Recall (Diabetic class) | 91% |
+| F1 Score (Diabetic class) | 87% |
+| Precision (Diabetic class) | 83% |
+| Optimal Threshold | 0.16 |
 
-   **Input Health Metrics:**
-   - On the prediction page, users provide their health metrics, such as:
-     - Gender, Glucose levels, Blood Pressure, Skin Thickness, Insulin levels, BMI (Body Mass Index).
-     - Diabetes Pedigree Function (a measure of genetic influence), Age.
-   - These inputs are collected via an HTML form and sent to the backend for processing.
+The threshold of 0.16 was determined using **Youden's J statistic** on the ROC curve, optimising for high recall — minimising missed diabetic cases which is the clinically safer approach.
 
-2. **Data Preprocessing**
+**Dataset:** Pima Indian Diabetes Dataset  
+- Total records: 768  
+- Training set: 606 rows (80%)  
+- Test set: 154 rows (20%)  
+- Features: 8 clinical parameters  
 
-   **Standardization:**
-   - User inputs are preprocessed using the `scaler.pkl` file saved during training.
-   - The scaler ensures all input values are scaled to match the data format used during model training.
-   - This is crucial because the model was trained on scaled data, and raw inputs may lead to inaccurate predictions.
+---
 
-   **Pregnancy Adjustment:**
-   - If the user is male, the Pregnancies feature is automatically set to 0, as it’s not applicable.
+## Features
 
-3. **Model Prediction**
+- **User Authentication** — Register, login, guest mode
+- **Diabetes Risk Predictor** — 8-parameter clinical input form with real-time field validation and normal range hints
+- **Instant Prediction** — LightGBM model loaded at server startup for sub-second predictions
+- **Health Dashboard** — Prediction history table, donut chart, sparklines, live date/time in user's local timezone
+- **Prediction History** — Filterable table with date, time, result badge and risk bar
+- **Responsive Design** — Full mobile support with bottom navigation bar on small screens
+---
 
-   **Loading the Model:**
-   - The pre-trained LightGBM Classifier (`best_lgb_model.pkl`) is loaded into memory.
+## Technologies Used
 
-   **Prediction Process:**
-   - The preprocessed inputs are fed into the model.
-   - The model predicts a probability of the user being diabetic.
+### Frontend
+- **HTML5** — Semantic page structure
+- **CSS3** — Fully custom dark theme (no frameworks or Bootstrap), CSS variables, grid/flexbox layouts, keyframe animations
+- **Vanilla JavaScript** — Form validation, local timezone conversion, dynamic UI interactions
+- **Chart.js** — Donut chart and sparkline mini-charts on the dashboard
+- **Google Fonts** — Outfit (UI) + DM Serif Display (headings)
 
-   **Threshold Application:**
-   - The predicted probability is compared against the optimal threshold (e.g., 0.16).
-   - If the probability exceeds the threshold, the user is classified as "Diabetic", otherwise "Non-Diabetic".
-   - This threshold ensures a balance between sensitivity (identifying diabetics correctly) and specificity (avoiding false positives).
+### Backend
+- **Python** — Core language
+- **Django 4.0.6** — Web framework, routing, authentication, ORM
+- **SQLite** — Database for users and prediction history
 
-4. **Prediction Storage**
+### Machine Learning
+- **LightGBM** — Gradient boosted decision tree classifier
+- **Scikit-learn** — StandardScaler for feature scaling, ROC curve for threshold optimisation
+- **Pandas** — Data manipulation and preprocessing
+- **NumPy** — Numerical operations and threshold application
 
-   **Storing Results in SQLite:**
-   - Each prediction result is stored in the backend SQLite database.
-   - The logged-in user's ID is associated with the prediction, ensuring personal tracking of history.
+---
 
-5. **Prediction Dashboard**
+## Project Structure
+```
+Diabetes Predictor/
+├── diabetes_predictor_website/   # Django project settings
+├── predictor/                    # Main Django app
+│   ├── ml_model/
+│   │   ├── best_lgb_model.pkl   # Trained LightGBM model
+│   │   └── scaler.pkl           # Fitted StandardScaler
+│   ├── templates/predictor/
+│   │   ├── login.html           # Login page
+│   │   ├── register.html        # Registration page
+│   │   ├── predict.html         # Prediction form
+│   │   ├── result.html          # Prediction result
+│   │   └── dashboard.html       # User health dashboard
+│   ├── models.py                # Prediction model (DB)
+│   ├── views.py                 # Backend logic
+│   └── urls.py                  # URL routing
+├── data_cleaning.py             # Dataset preprocessing script
+├── model_training.py            # LightGBM training script
+├── diabetes.csv                 # Pima Indian Diabetes dataset
+├── requirements.txt             # Python dependencies
+└── manage.py                    # Django management
+```
 
-   **Viewing Prediction History:**
-   - Users can view their past predictions on the dashboard page.
-   - The dashboard displays:
-     - **Prediction Result:** Indicates whether the user was classified as "Diabetic" or "Non-Diabetic".
-     - **The exact date of the prediction.**
+---
 
-6. **Error Handling**
-   - If inputs are invalid (e.g., missing values, non-numeric inputs), an error message is displayed.
+## How It Works
 
-**Backend Workflow Summary**
+### 1. User Input
+Users provide 8 clinical parameters via the prediction form:
+- Gender, Pregnancies (females only), Glucose, Blood Pressure
+- Skin Thickness, Insulin, BMI, Diabetes Pedigree Function, Age
 
-- The user inputs data through the frontend form.
-- The data is sent to the backend via a POST request.
-- The backend:
-   - Preprocesses the data (scaling and feature adjustment).
-   - Uses the LightGBM model to predict diabetes probability.
-   - Applies the optimal threshold to determine the final result.
-   - Saves the result to the SQLite database for logged-in users.
-- The prediction result is displayed on the result page and stored for future reference.
+### 2. Data Preprocessing
+- Input values are scaled using the pre-fitted `StandardScaler`
+- Male users automatically have Pregnancies set to 0
+- Input validation enforces medically realistic ranges for each field
 
-**Technologies Used**
+### 3. Model Prediction
+- The LightGBM model is loaded **once at server startup** (not per request) for instant predictions
+- The model outputs a probability score
+- If probability ≥ 0.16 (optimal threshold) → **Diabetic**
+- If probability < 0.16 → **Non-Diabetic**
 
-**Languages and Libraries**
-- **Backend:** Python, Django, SQLite  
-- **Frontend:** HTML, CSS, Bootstrap  
-- **Machine Learning:** LightGBM, Scikit-learn, Pandas, NumPy  
-- **Data Preprocessing:** Local Outlier Factor, StandardScaler  
-- **Tools:** PythonAnywhere (for hosting)
+### 4. Result Storage
+- Prediction result is saved to SQLite with a UTC timestamp
+- Displayed in the user's local browser timezone on the dashboard
 
-**Key Files**
-- **views.py:** Handles backend logic, including data preprocessing and prediction.  
-- **model_training.py:** Trains the LightGBM model and saves it as a .pkl file.  
-- **data_cleaning.py:** Cleans and preprocesses the dataset (diabetes.csv).
+---
 
-**Steps to Set Up and Run the Backend**
+## Setup and Installation
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/RC-15-coder/CINS-490.git
-   cd CINS-490
-   ```
+### 1. Clone the Repository
+```bash
+git clone https://github.com/RC-15-coder/CINS-490.git
+cd CINS-490
+```
 
-2. **Create a Virtual Environment**  
-   To avoid dependency conflicts, create a virtual environment:  
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Linux/Mac
-   venv\Scripts\activate     # On Windows
-   ```
+### 2. Create a Virtual Environment
+```bash
+python -m venv venv
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # Mac/Linux
+```
 
-3. **Install Dependencies**  
-   Ensure all required packages are installed. This is achieved using the `requirements.txt` file:  
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-4. **Run the Website from the Backend (if PythonAnywhere is down or not working):**  
-   Start the Django development server:  
-   ```bash
-   python manage.py runserver
-   ```
-   This will output a URL on the console like:  
-   ```
-   Starting development server at http://127.0.0.1:8000/
-   ```
+### 4. Run the Development Server
+```bash
+python manage.py runserver
+```
+Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
 
-5. **Optional Steps to Run Data Cleaning and Model Training Scripts:**  
+---
 
-   If you want to regenerate the `scaler.pkl` and `best_lgb_model.pkl` files:  
+## Optional: Regenerate Model Files
 
-   - **Data Cleaning:**
-     ```bash
-     python data_cleaning.py
-     ```
-   - **Model Training:**
-     ```bash
-     python model_training.py
-     ```
+If you want to retrain the model from scratch:
+```bash
+# Step 1 — Clean and preprocess the dataset
+python data_cleaning.py
 
-   These scripts will generate the required preprocessed data and model files in the appropriate directories.
+# Step 2 — Train the model and save .pkl files
+python model_training.py
+```
 
-6. **Accessing the Website:**  
+This regenerates `best_lgb_model.pkl` and `scaler.pkl` with identical results (fixed `random_state=42`).
 
-   - After running `python manage.py runserver`, open the following URL in your web browser:  
-     ```
-     http://127.0.0.1:8000/
-     ```
+---
 
-**To see the live demo:**
+## Key Files
 
-[https://raghavchandna.pythonanywhere.com/](https://raghavchandna.pythonanywhere.com/)
+| File | Purpose |
+|---|---|
+| `views.py` | Handles prediction logic, preprocessing, and result storage |
+| `model_training.py` | Trains LightGBM, finds optimal threshold via ROC curve, saves model |
+| `data_cleaning.py` | Cleans raw dataset, removes outliers, creates train/test splits |
+| `predictor/ml_model/` | Contains trained model and scaler pickle files |
 
-**For Testing the Results on the Website:**
+---
 
-**Already Tested Users:**
-- **Username:** Jay  
-  **Password:** jay@123456  
+## Disclaimer
 
-- **Username:** Rachel  
-  **Password:** rachel@123456  
-
+This application is an educational project. It is **not a substitute for professional medical advice**. Always consult a qualified healthcare professional for any health decisions.
