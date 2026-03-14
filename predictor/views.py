@@ -9,42 +9,50 @@ import os
 import pandas as pd
 from .models import Prediction
 
+# ------------------------------------------------------------------
+# ✅ Load model & scaler ONCE at startup — stays in memory forever.
+#    This is the fix for the ~1 minute prediction delay.
+#    Previously these were inside _run_prediction() and reloaded
+#    from disk on every single form submission.
+# ------------------------------------------------------------------
+_BASE_DIR = os.path.join('predictor', 'ml_model')
+model  = joblib.load(os.path.join(_BASE_DIR, 'best_lgb_model.pkl'))
+scaler = joblib.load(os.path.join(_BASE_DIR, 'scaler.pkl'))
+
 
 def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()          # Save the new user
-            login(request, user)        # Log in the user
+            user = form.save()
+            login(request, user)
             messages.success(request, "Registration successful! You are now logged in.")
-            return redirect('dashboard')  # Redirect to the dashboard
+            return redirect('dashboard')
     else:
-        form = UserCreationForm()  # Initialize an empty form for GET requests
+        form = UserCreationForm()
 
-    # Render the registration template with the form
     return render(request, 'predictor/register.html', {'form': form})
 
 
-@login_required
-def predict_diabetes(request):
+# ------------------------------------------------------------------
+# Shared helper — save_to_db controls whether result is stored
+# ------------------------------------------------------------------
+def _run_prediction(request, save_to_db):
     if request.method == 'POST':
         try:
-            # Extract input values from POST data
-            gender = request.POST.get('gender', '').lower()
+            gender      = request.POST.get('gender', '').lower()
             pregnancies = float(request.POST.get('pregnancies', 0)) if gender != 'male' else 0.0
-            glucose = float(request.POST.get('glucose', 0))
-            blood_pressure = float(request.POST.get('blood_pressure', 0))
-            skin_thickness = float(request.POST.get('skin_thickness', 0))
-            insulin = float(request.POST.get('insulin', 0))
-            bmi = float(request.POST.get('bmi', 0))
+            glucose                    = float(request.POST.get('glucose', 0))
+            blood_pressure             = float(request.POST.get('blood_pressure', 0))
+            skin_thickness             = float(request.POST.get('skin_thickness', 0))
+            insulin                    = float(request.POST.get('insulin', 0))
+            bmi                        = float(request.POST.get('bmi', 0))
             diabetes_pedigree_function = float(request.POST.get('diabetes_pedigree_function', 0))
-            age = float(request.POST.get('age', 0))
+            age                        = float(request.POST.get('age', 0))
         except ValueError:
-            # Handle invalid input conversions
             messages.error(request, "Invalid input. Please enter valid numbers.")
             return render(request, "predictor/predict.html")
 
-        # Create Input DataFrame
         feature_columns = [
             'Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness',
             'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age'
@@ -55,57 +63,49 @@ def predict_diabetes(request):
         ]
         input_data = pd.DataFrame([input_values], columns=feature_columns)
 
-        # Load the Trained Model and Scaler
-        model_path = os.path.join('predictor', 'ml_model', 'best_lgb_model.pkl')
-        scaler_path = os.path.join('predictor', 'ml_model', 'scaler.pkl')
-
-        if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-            return render(request, "predictor/error.html", {"error": "Model or scaler file not found!"})
-
-        # Load the model and scaler
-        model = joblib.load(model_path)
-        scaler = joblib.load(scaler_path)
-
-        # Scale the Input Data
+        # ✅ model and scaler are already in memory — no file I/O here
         input_data_scaled = scaler.transform(input_data)
+        y_pred_proba      = model.predict_proba(input_data_scaled)[:, 1]
 
-        # Predict Probabilities
-        y_pred_proba = model.predict_proba(input_data_scaled)[:, 1]
+        optimal_threshold = 0.16
+        prediction        = (y_pred_proba >= optimal_threshold).astype(int)
+        result            = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
 
-        # Apply the Optimal Threshold for Classification
-        optimal_threshold = 0.16 
-        prediction = (y_pred_proba >= optimal_threshold).astype(int)
+        if save_to_db and request.user.is_authenticated:
+            Prediction.objects.create(
+                user=request.user,
+                prediction_result=result
+            )
 
-        # Interpret the Prediction
-        result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
-
-        # Save the Prediction to the Database
-        Prediction.objects.create(
-            user=request.user,              # Associate the prediction with the logged-in user
-            prediction_result=result        # Save the prediction result
-        )
-
-        # Render the Result Page 
         return render(request, "predictor/result.html", {"result": result})
 
-    else:
-        # For GET requests, render the prediction form
-        return render(request, "predictor/predict.html")
+    # GET — render the blank prediction form
+    return render(request, "predictor/predict.html")
+
+
+@login_required
+def predict_diabetes(request):
+    return _run_prediction(request, save_to_db=True)
+
+
+def predict_diabetes_guest(request):
+    return _run_prediction(request, save_to_db=False)
 
 
 @login_required
 def user_dashboard(request):
-    user_predictions = Prediction.objects.filter(user=request.user).order_by('-timestamp')
+    user_predictions = Prediction.objects.filter(
+        user=request.user
+    ).order_by('-timestamp')
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         predictions = [
             {
-                "timestamp": prediction.timestamp.isoformat(),
-                "prediction_result": prediction.prediction_result
+                "timestamp":         p.timestamp.isoformat(),
+                "prediction_result": p.prediction_result
             }
-            for prediction in user_predictions
+            for p in user_predictions
         ]
         return JsonResponse({"predictions": predictions})
-    else:
-        # Handle Standard Requests
-        return render(request, "predictor/dashboard.html", {"predictions": user_predictions})
+
+    return render(request, "predictor/dashboard.html", {"predictions": user_predictions})

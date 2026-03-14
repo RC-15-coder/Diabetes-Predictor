@@ -2,209 +2,867 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Diabetes Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict — DiabetesAI</title>
     {% load static %}
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffe4b5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --teal:        #0D9488;
+            --teal-dark:   #0F766E;
+            --teal-glow:   rgba(13,148,136,0.38);
+            --navy:        #050D19;
+            --navy-mid:    #081320;
+            --navy-card:   #0C1827;
+            --navy-sidebar:#070F1C;
+            --white:       #FFFFFF;
+            --text-dim:    #3D5470;
+            --text-mid:    #6B88A8;
+            --text-light:  #A8C0D6;
+            --border:      rgba(255,255,255,0.055);
+            --border-mid:  rgba(255,255,255,0.10);
+            --green:       #22C55E;
+            --red:         #F87171;
+            --amber:       #F59E0B;
+            --sidebar-w:   240px;
         }
 
-        .main-container {
-            display: flex;
-            width: 800px;
-            height: 670px; 
-            background-color: #fdf1db;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        html, body {
+            height: 100%; font-family: 'Outfit', sans-serif;
+            background: var(--navy); color: var(--white);
+            overflow: hidden;
         }
 
-        .image-section, .form-section {
-            width: 50%;
-            padding: 20px;
-            box-sizing: border-box;
+        /* ── background ── */
+        .bg-layer {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background:
+                radial-gradient(ellipse 65% 55% at 15% 15%, rgba(13,148,136,0.14) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 88% 85%, rgba(10,25,70,0.8)    0%, transparent 60%),
+                radial-gradient(ellipse 35% 30% at 80% 5%,  rgba(13,148,136,0.07) 0%, transparent 50%);
         }
 
-        .image-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        .orb {
+            position: fixed; border-radius: 50%;
+            pointer-events: none; z-index: 0; filter: blur(80px);
+        }
+        .orb-1 { width:360px; height:360px; background:rgba(13,148,136,0.11); top:-70px; left:200px; animation:orb-d 14s ease-in-out infinite alternate; }
+        .orb-2 { width:280px; height:280px; background:rgba(30,58,138,0.14); bottom:-50px; right:220px; animation:orb-d 18s ease-in-out infinite alternate-reverse; }
+        @keyframes orb-d { from{transform:translate(0,0) scale(1)} to{transform:translate(35px,25px) scale(1.07)} }
+
+        .grain {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
         }
 
-        .image-section img {
-            width: 100%;
-            max-width: 250px;
-            height: auto;
-            border-radius: 8px;
+        /* ════════ LAYOUT ════════ */
+        .layout { display:flex; height:100vh; position:relative; z-index:1; }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: var(--sidebar-w); flex-shrink:0;
+            background: var(--navy-sidebar);
+            border-right: 1px solid var(--border);
+            display:flex; flex-direction:column;
+            padding: 28px 20px;
+            position:relative; overflow:hidden;
+            animation: slideInLeft 0.6s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes slideInLeft { from{opacity:0;transform:translateX(-22px)} to{opacity:1;transform:translateX(0)} }
+
+        .sidebar::before {
+            content:''; position:absolute; bottom:0; left:0; right:0; height:180px;
+            background:linear-gradient(to top, rgba(13,148,136,0.06), transparent);
+            pointer-events:none;
         }
 
-        .image-section h1 {
-            font-size: 24px;
-            color: #f59b42;
-            margin-top: 20px;
+        .sidebar-brand {
+            display:flex; align-items:center; gap:10px;
+            padding-bottom:26px; border-bottom:1px solid var(--border); margin-bottom:26px;
         }
 
-        .image-section p {
-            font-size: 14px;
-            color: #555;
-            text-align: center;
-            margin-top: 10px;
+        .brand-icon {
+            width:38px; height:38px;
+            background:linear-gradient(135deg, var(--teal), var(--teal-dark));
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+            font-size:20px; box-shadow:0 4px 16px rgba(13,148,136,0.45);
         }
 
-        .form-section {
-            background-color: #fff8e1;
-            border-radius: 10px;
-            padding: 10px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        .brand-name { font-size:17px; font-weight:700; color:var(--white); letter-spacing:-0.3px; }
+        .brand-name span { color:var(--teal); }
+
+        .nav-label {
+            font-size:10px; font-weight:600; color:var(--text-dim);
+            letter-spacing:1.5px; text-transform:uppercase;
+            margin-bottom:8px; padding:0 8px;
         }
 
-        .form-section h2 {
-            color: #ff9900;
-            font-size: 20px;
-            text-align: center;
-            margin-bottom: 10px;
+        .nav-item {
+            display:flex; align-items:center; gap:10px;
+            padding:10px 12px; border-radius:10px;
+            font-size:14px; font-weight:500;
+            color:var(--text-mid); text-decoration:none;
+            cursor:pointer; border:none; background:none;
+            width:100%; font-family:'Outfit',sans-serif;
+            transition:background 0.2s, color 0.2s; margin-bottom:2px;
+        }
+        .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--text-light); }
+        .nav-item.active {
+            background:rgba(13,148,136,0.12); color:var(--white);
+            border:1px solid rgba(13,148,136,0.2);
+        }
+        .nav-item.active svg { color:var(--teal); }
+
+        .nav-spacer { flex:1; }
+
+        .sidebar-user {
+            background:rgba(255,255,255,0.03);
+            border:1px solid var(--border-mid);
+            border-radius:12px; padding:14px;
+            display:flex; align-items:center; gap:10px; margin-top:16px;
+        }
+        .user-avatar {
+            width:36px; height:36px; border-radius:50%;
+            background:linear-gradient(135deg, var(--teal), #1E3A8A);
+            display:flex; align-items:center; justify-content:center;
+            font-size:14px; font-weight:700; color:white; flex-shrink:0;
+            box-shadow:0 0 0 2px rgba(13,148,136,0.4);
+        }
+        .user-info strong { display:block; font-size:13px; font-weight:600; color:var(--white); }
+        .user-info span   { font-size:11px; color:var(--text-dim); }
+
+        .btn-logout {
+            display:flex; align-items:center; gap:7px; padding:9px 14px;
+            border-radius:9px; background:transparent;
+            border:1px solid rgba(248,113,113,0.2);
+            font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
+            color:#F87171; cursor:pointer; width:100%; margin-top:10px;
+            transition:all 0.2s;
+        }
+        .btn-logout:hover { background:rgba(248,113,113,0.07); border-color:rgba(248,113,113,0.4); }
+
+        /* ─── MAIN ─── */
+        .main { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+        .main::-webkit-scrollbar { width:5px; }
+        .main::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:99px; }
+
+        /* topbar */
+        .topbar {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:20px 44px;
+            border-bottom:1px solid var(--border);
+            background:rgba(5,13,25,0.75);
+            backdrop-filter:blur(16px);
+            position:sticky; top:0; z-index:50;
+            animation:fadeDown 0.6s 0.15s both;
+        }
+        @keyframes fadeDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+        .topbar-left h2 { font-size:18px; font-weight:700; color:var(--white); letter-spacing:-0.4px; }
+        .topbar-left p  { font-size:13px; color:var(--text-dim); margin-top:2px; }
+
+        .topbar-right { display:flex; align-items:center; gap:12px; }
+
+        .live-badge {
+            display:flex; align-items:center; gap:7px;
+            background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2);
+            border-radius:99px; padding:5px 13px;
+            font-size:12px; font-weight:600; color:var(--green);
+        }
+        .live-dot {
+            width:6px; height:6px; border-radius:50%; background:var(--green);
+            animation:live-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes live-pulse {
+            0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,0.4)}
+            50%{opacity:0.7;box-shadow:0 0 0 5px rgba(34,197,94,0)}
         }
 
-        .form-section p {
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #555;
+        .btn-secondary-nav {
+            display:inline-flex; align-items:center; gap:7px;
+            padding:9px 18px;
+            background:transparent; border:1px solid var(--border-mid);
+            border-radius:10px; font-family:'Outfit',sans-serif;
+            font-size:13px; font-weight:500; color:var(--text-mid);
+            text-decoration:none; cursor:pointer;
+            transition:all 0.2s;
+        }
+        .btn-secondary-nav:hover { border-color:rgba(255,255,255,0.22); color:var(--white); background:rgba(255,255,255,0.04); }
+
+        /* ════════════════════════════════
+           PAGE CONTENT
+        ════════════════════════════════ */
+        .content {
+            padding:36px 44px 56px;
+            display:flex; flex-direction:column; gap:28px;
         }
 
-        label {
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #333;
+        /* ── page header banner ── */
+        .page-banner {
+            background:linear-gradient(120deg, rgba(13,148,136,0.14) 0%, rgba(12,24,39,0.5) 65%),
+                        var(--navy-card);
+            border:1px solid rgba(13,148,136,0.18);
+            border-radius:20px; padding:28px 36px;
+            display:flex; align-items:center; justify-content:space-between;
+            overflow:hidden; position:relative;
+            animation:fadeUp 0.6s 0.2s both;
+        }
+        .page-banner::after {
+            content:''; position:absolute; right:-50px; top:-50px;
+            width:220px; height:220px; border-radius:50%;
+            background:radial-gradient(circle, rgba(13,148,136,0.15) 0%, transparent 70%);
+            pointer-events:none;
         }
 
-        select, input {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 14px;
+        .banner-text .tag {
+            display:inline-flex; align-items:center; gap:7px;
+            background:rgba(13,148,136,0.13); border:1px solid rgba(13,148,136,0.28);
+            border-radius:99px; padding:4px 13px;
+            font-size:11px; font-weight:600; color:var(--teal);
+            letter-spacing:0.9px; text-transform:uppercase; margin-bottom:12px;
+        }
+        .pulse-dot { width:6px; height:6px; border-radius:50%; background:var(--teal); animation:pd 1.8s ease-in-out infinite; }
+        @keyframes pd { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.6)} }
+
+        .banner-text h1 {
+            font-family:'DM Serif Display', serif;
+            font-size:clamp(22px,2.5vw,30px); color:var(--white);
+            line-height:1.2; letter-spacing:-0.4px;
+        }
+        .banner-text h1 em { font-style:italic; color:var(--teal); }
+        .banner-text p { font-size:14px; color:var(--text-mid); margin-top:6px; line-height:1.6; }
+
+        .banner-icon { font-size:72px; opacity:0.18; flex-shrink:0; }
+
+        /* ════════════════════════════════
+           FORM GRID
+        ════════════════════════════════ */
+        .form-card {
+            background:var(--navy-card);
+            border:1px solid var(--border);
+            border-radius:20px; overflow:hidden;
+            animation:fadeUp 0.6s 0.3s both;
         }
 
-        button {
-            background-color: #ff9900;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-            text-align: center;
+        .form-card-header {
+            padding:22px 32px;
+            border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
         }
 
-        button:hover {
-            background-color: #cc7a00;
+        .form-card-header h2 {
+            font-size:16px; font-weight:700; color:var(--white); letter-spacing:-0.2px;
+            display:flex; align-items:center; gap:10px;
         }
 
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-                height: auto;
-            }
-
-            .image-section, .form-section {
-                width: 100%;
-            }
-
-            .form-section {
-                padding: 15px;
-            }
+        .step-badge {
+            background:rgba(13,148,136,0.12); border:1px solid rgba(13,148,136,0.25);
+            border-radius:99px; padding:3px 11px;
+            font-size:11px; font-weight:600; color:var(--teal);
         }
+
+        .form-card-sub {
+            font-size:13px; color:var(--text-dim);
+        }
+
+        /* form body grid */
+        .form-body { padding:28px 32px; }
+
+        .form-grid {
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:20px 24px;
+        }
+
+        /* individual field */
+        .field-wrap { display:flex; flex-direction:column; gap:0; }
+
+        .field-label {
+            font-size:12px; font-weight:600; color:var(--text-mid);
+            letter-spacing:0.4px; text-transform:uppercase;
+            margin-bottom:8px;
+            display:flex; align-items:center; gap:7px;
+        }
+
+        .field-label .hint {
+            font-size:10.5px; font-weight:400; color:var(--text-dim);
+            text-transform:none; letter-spacing:0;
+        }
+
+        .field-inner { position:relative; }
+
+        .field-inner input,
+        .field-inner select {
+            width:100%;
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(255,255,255,0.09);
+            border-radius:12px;
+            padding:14px 16px 14px 44px;
+            font-size:15px; font-family:'Outfit',sans-serif;
+            color:var(--white); outline:none;
+            transition:border-color 0.22s, background 0.22s, box-shadow 0.22s;
+            -webkit-appearance:none; appearance:none;
+        }
+
+        .field-inner input:focus,
+        .field-inner select:focus {
+            border-color:var(--teal);
+            background:rgba(13,148,136,0.055);
+            box-shadow:0 0 0 4px rgba(13,148,136,0.13);
+        }
+
+        .field-inner input:-webkit-autofill {
+            -webkit-box-shadow:0 0 0 100px var(--navy-card) inset;
+            -webkit-text-fill-color:var(--white);
+        }
+
+        .field-inner select option { background:var(--navy-card); color:var(--white); }
+
+        /* field icon */
+        .field-icon {
+            position:absolute; left:14px; top:50%;
+            transform:translateY(-50%);
+            color:var(--text-dim); pointer-events:none;
+            transition:color 0.2s; font-size:17px;
+        }
+        .field-inner:focus-within .field-icon { color:var(--teal); }
+
+        /* range hint below field */
+        .range-hint {
+            font-size:11px; color:var(--text-dim); margin-top:5px;
+            display:flex; align-items:center; gap:5px;
+        }
+        .range-dot { width:5px; height:5px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+
+        /* pregnancies span full row when visible */
+        .field-full { grid-column:1 / -1; }
+
+        /* gender field spans 1 col */
+        #pregnancies-wrap { display:none; }
+        #pregnancies-wrap.show { display:flex; }
+
+        /* ── form actions row ── */
+        .form-actions {
+            display:flex; align-items:center; gap:14px;
+            padding:24px 32px;
+            border-top:1px solid var(--border);
+            flex-wrap:wrap;
+        }
+
+        .btn-predict {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:15px 32px;
+            background:linear-gradient(135deg, var(--teal), var(--teal-dark));
+            border:none; border-radius:12px;
+            font-family:'Outfit',sans-serif;
+            font-size:15px; font-weight:700;
+            color:var(--white); cursor:pointer;
+            box-shadow:0 4px 20px rgba(13,148,136,0.42);
+            position:relative; overflow:hidden;
+            transition:transform 0.15s, box-shadow 0.2s;
+        }
+        .btn-predict::after {
+            content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+            background:linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transform:skewX(-20deg);
+            animation:shimmer 3.5s ease-in-out infinite 1.5s;
+        }
+        @keyframes shimmer { 0%{left:-100%} 40%,100%{left:150%} }
+        .btn-predict:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(13,148,136,0.52); }
+        .btn-predict:active { transform:translateY(0); }
+
+        .btn-predict .spinner {
+            display:none; width:18px; height:18px;
+            border:2px solid rgba(255,255,255,0.35);
+            border-top-color:white; border-radius:50%;
+            animation:spin 0.7s linear infinite;
+        }
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        .btn-outline {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:15px 22px;
+            background:transparent; border:1px solid var(--border-mid);
+            border-radius:12px; font-family:'Outfit',sans-serif;
+            font-size:15px; font-weight:500; color:var(--text-mid);
+            cursor:pointer; text-decoration:none;
+            transition:all 0.2s;
+        }
+        .btn-outline:hover { border-color:rgba(255,255,255,0.25); color:var(--white); background:rgba(255,255,255,0.04); }
+
+        .btn-reset {
+            display:inline-flex; align-items:center; gap:7px;
+            padding:15px 22px;
+            background:transparent; border:1px solid rgba(248,113,113,0.2);
+            border-radius:12px; font-family:'Outfit',sans-serif;
+            font-size:15px; font-weight:500; color:#F87171;
+            cursor:pointer; margin-left:auto;
+            transition:all 0.2s;
+        }
+        .btn-reset:hover { background:rgba(248,113,113,0.07); border-color:rgba(248,113,113,0.4); }
+
+        /* ════════════════════════════════
+           MODAL
+        ════════════════════════════════ */
+        .modal-overlay {
+            position:fixed; inset:0; z-index:999;
+            background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);
+            display:none; align-items:center; justify-content:center;
+        }
+        .modal-overlay.open { display:flex; animation:modalIn 0.3s ease both; }
+        @keyframes modalIn { from{opacity:0} to{opacity:1} }
+
+        .modal-box {
+            background:var(--navy-card);
+            border:1px solid var(--border-mid);
+            border-radius:20px; padding:40px 36px;
+            text-align:center; max-width:400px; width:90%;
+            box-shadow:0 32px 80px rgba(0,0,0,0.6);
+            animation:modalBoxIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes modalBoxIn { from{opacity:0;transform:scale(0.95) translateY(16px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+        .modal-icon { font-size:44px; margin-bottom:16px; }
+        .modal-box h3 { font-size:20px; font-weight:700; color:var(--white); margin-bottom:8px; }
+        .modal-box p  { font-size:14px; color:var(--text-mid); line-height:1.65; }
+        .modal-box a  { color:var(--teal); font-weight:600; text-decoration:none; }
+        .modal-box a:hover { text-decoration:underline; }
+
+        .modal-actions { display:flex; gap:12px; justify-content:center; margin-top:24px; }
+
+        .modal-btn-primary {
+    padding:12px 24px; background:var(--teal);
+    border:none; border-radius:10px;
+    font-family:'Outfit',sans-serif;
+    font-size:14px; font-weight:700;
+    color:#FFFFFF !important;
+    -webkit-text-fill-color:#FFFFFF;
+    cursor:pointer; text-decoration:none;
+    display:inline-block;
+    transition:background 0.2s;
+    }
+       .modal-btn-primary:hover { background:var(--teal-dark); color:#FFFFFF !important; }
+
+        .modal-btn-close {
+            padding:12px 24px; background:transparent;
+            border:1px solid var(--border-mid); border-radius:10px;
+            font-family:'Outfit',sans-serif;
+            font-size:14px; font-weight:500; color:var(--text-mid);
+            cursor:pointer; transition:all 0.2s;
+        }
+        .modal-btn-close:hover { border-color:rgba(255,255,255,0.25); color:var(--white); }
+
+        @keyframes fadeUp {
+            from{opacity:0;transform:translateY(20px)}
+            to{opacity:1;transform:translateY(0)}
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 960px) {
+    html, body { overflow: auto; }
+
+    .layout { flex-direction: column; height: auto; min-height: 100vh; }
+
+    .sidebar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        width: 100%; height: 70px;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0 10px;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        background: rgba(7,15,28,0.95);
+        backdrop-filter: blur(12px);
+        z-index: 100;
+        animation: none;
+    }
+
+    .sidebar::before,
+    .sidebar-brand,
+    .nav-label,
+    .nav-spacer,
+    .sidebar-user { display: none; }
+
+    .nav-item {
+        flex-direction: column; gap: 4px;
+        width: auto; padding: 8px 12px; margin: 0;
+        font-size: 10px;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .btn-logout {
+        flex-direction: column; gap: 4px;
+        width: auto; padding: 8px 12px; margin: 0;
+        font-size: 10px; border: none;
+        background: transparent !important;
+    }
+
+    .nav-item.active { color: var(--teal); }
+    .nav-item.active svg { filter: drop-shadow(0 0 4px var(--teal)); }
+
+    .sidebar form { margin: 0; display: flex; align-items: center; }
+
+    .layout { padding-bottom: 70px; }
+
+    /* topbar */
+    .topbar { padding: 14px 20px; flex-wrap: wrap; gap: 10px; }
+    .topbar-left h2 { font-size: 16px; }
+    .topbar-left p  { display: none; }
+
+    /* content */
+    .content { padding: 20px 16px 48px; }
+
+    /* banner — stack vertically */
+    .page-banner { flex-direction: column; gap: 14px; padding: 22px 20px; }
+    .page-banner h1 { font-size: 22px; }
+    .banner-icon { display: none; }
+
+    /* form card */
+    .form-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 16px 20px;
+    }
+    .form-card-sub { font-size: 12px; }
+
+    .form-body { padding: 20px 16px; }
+
+    /* 3-col grid → 1-col on mobile */
+    .form-grid { grid-template-columns: 1fr; gap: 16px; }
+
+    /* action buttons stack */
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px 16px 20px;
+    }
+    .btn-predict  { width: 100%; justify-content: center; }
+    .btn-outline  { width: 100%; justify-content: center; }
+    .btn-reset    { width: 100%; justify-content: center; margin-left: 0; }
+}
+
+@media (max-width: 480px) {
+    .topbar { padding: 12px 16px; }
+    .content { padding: 16px 12px 40px; }
+    .page-banner { padding: 18px 16px; }
+    .form-body { padding: 16px 12px; }
+    .form-card-header { padding: 14px 16px; }
+}
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Image Section -->
-        <div class="image-section">
-            <img src="{% static 'images/doctor_testing.jpg' %}" alt="Doctor and Patient">
-            <h1>Diabetes Prediction</h1>
-            <b><p>Predict diabetes with ease. Just fill in the required values.</b></p>
+
+<div class="bg-layer"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="grain"></div>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+        <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+        <circle cx="20" cy="10" r="2"/>
+    </svg>
+</div>
+            <div class="brand-name">Diabetes<span>AI</span></div>
         </div>
 
-        <!-- Form Section -->
-        <div class="form-section">
-            <h2>Enter Your Details</h2>
-            <b><p>It's just a prediction; do consult with a doctor.</b></p>
-            <form method="post">
-                {% csrf_token %}
-                <!-- Gender Dropdown -->
-                <label for="gender">Gender:</label>
-                <select id="gender" name="gender" onchange="togglePregnanciesField()" required>
-                    <option value="" disabled selected>Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                </select>
+        <div class="nav-label">Menu</div>
 
-                <!-- Pregnancies Field -->
-                <div id="pregnancies-container" style="display: none;">
-                    <label for="pregnancies">Pregnancies:</label>
-                    <input type="number" id="pregnancies" name="pregnancies" min="0">
+        {% if user.is_authenticated %}
+<a href="{% url 'dashboard' %}" class="nav-item">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    Dashboard
+</a>
+{% else %}
+<button type="button" class="nav-item" onclick="openModal()">
+    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    Dashboard
+</button>
+{% endif %}
+
+        <a href="#" class="nav-item active">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/>
+            </svg>
+            New Prediction
+        </a>
+
+        <div class="nav-spacer"></div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">
+                {% if user.is_authenticated %}{{ user.username|slice:":1"|upper }}{% else %}G{% endif %}
+            </div>
+            <div class="user-info">
+                <strong>{% if user.is_authenticated %}{{ user.username }}{% else %}Guest{% endif %}</strong>
+                <span>{% if user.is_authenticated %}Patient Account{% else %}Guest Mode{% endif %}</span>
+            </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}" style="margin:0">
+            {% csrf_token %}
+            <button type="submit" class="btn-logout">
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+            </button>
+        </form>
+        {% endif %}
+    </aside>
+
+    <div class="main">
+
+        <div class="topbar">
+            <div class="topbar-left">
+                <h2>Diabetes Risk Predictor</h2>
+                <p id="currentDate">Loading date…</p>
+            </div>
+            <div class="topbar-right">
+                <div class="live-badge">
+                    <div class="live-dot"></div>
+                    Model Ready
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="page-banner">
+                <div class="banner-text">
+                    {% if user.is_authenticated %}
+                    <h1>Welcome back, <em>{{ user.username }}</em></h1>
+                    {% endif %}
+                    <h1>Enter your <em>clinical values</em></h1>
+                    
+                    <p>All fields are used by the model. Normal ranges are shown below each field as a guide. Always consult a doctor for diagnosis.</p>
+                </div>
+                <div class="banner-icon">🔬</div>
+            </div>
+
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h2>
+                        Clinical Input Form
+                        <span class="step-badge">8 parameters</span>
+                    </h2>
+                    <span class="form-card-sub">All fields required unless otherwise noted</span>
                 </div>
 
-                <!-- Reset form fields -->
-                <label for="glucose">Glucose:</label>
-                <input type="number" name="glucose" required>
+                <div class="form-body">
+                    <form method="post" id="predictForm">
+                        {% csrf_token %}
 
-                <label for="blood_pressure">Blood Pressure (mm Hg):</label>
-                <input type="number" name="blood_pressure" required>
+                        <div class="form-grid">
 
-                <label for="skin_thickness">Skin Thickness (mm):</label>
-                <input type="number" name="skin_thickness" required>
+                            <div class="field-wrap">
+                                <div class="field-label">
+                                    Gender
+                                </div>
+                                <div class="field-inner">
+                                    <span class="field-icon">⚧</span>
+                                    <select id="gender" name="gender" onchange="togglePregnancies()" required>
+                                        <option value="" disabled selected>Select gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                <label for="insulin">Insulin (mu U/ml):</label>
-                <input type="number" name="insulin" required>
+                            <div class="field-wrap" id="pregnancies-wrap">
+                                <div class="field-label">
+                                    Pregnancies
+                                    <span class="hint">(females only)</span>
+                                </div>
+                                <div class="field-inner">
+                                    <span class="field-icon">🤰</span>
+                                    <input type="number" id="pregnancies" name="pregnancies" min="0" max="15" placeholder="0">
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Number of times pregnant</div>
+                            </div>
 
-                <label for="bmi">BMI (weight (kg)/height (m&#178;)):</label>
-                <input type="number" step="any" name="bmi" required>
+                            <div class="field-wrap">
+                                <div class="field-label">Glucose <span class="hint">mg/dL</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">🩸</span>
+                                    <input type="number" name="glucose" placeholder="e.g. 120" min="50" max="300" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Normal: 70 – 140 mg/dL</div>
+                            </div>
 
-                <label for="diabetes_pedigree_function">Diabetes Pedigree Function:</label>
-                <input type="number" step="any" name="diabetes_pedigree_function" required>
+                            <div class="field-wrap">
+                                <div class="field-label">Blood Pressure <span class="hint">mm Hg</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">💓</span>
+                                    <input type="number" name="blood_pressure" placeholder="e.g. 72" min="40" max="180" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Normal: 60 – 90 mm Hg</div>
+                            </div>
 
-                <label for="age">Age:</label>
-                <input type="number" name="age" required>
+                            <div class="field-wrap">
+                                <div class="field-label">Skin Thickness <span class="hint">mm</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">📏</span>
+                                    <input type="number" name="skin_thickness" placeholder="e.g. 20" min="5" max="80" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Triceps fold: 10 – 40 mm</div>
+                            </div>
 
-                <div class="button-container">
-                    <button type="submit">Predict Diabetes</button>
-                    <a href="{% url 'dashboard' %}" style="text-decoration: none;">
-                    <button type="button">Previous Results</button>
-                    </a>
-                    <button type="reset" style="background-color: #ff9900; color: white; margin-top: 10px; cursor: pointer;">Reset</button>
+                            <div class="field-wrap">
+                                <div class="field-label">Insulin <span class="hint">mu U/ml</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">💉</span>
+                                    <input type="number" name="insulin" placeholder="e.g. 80" min="10" max="600" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Normal: 16 – 166 mu U/ml</div>
+                            </div>
+
+                            <div class="field-wrap">
+                                <div class="field-label">BMI <span class="hint">kg/m²</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">⚖️</span>
+                                    <input type="number" step="any" name="bmi" placeholder="e.g. 24.5" min="10" max="70" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Normal: 18.5 – 24.9</div>
+                            </div>
+
+                            <div class="field-wrap">
+                                <div class="field-label">Pedigree Function <span class="hint">score</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">🧬</span>
+                                    <input type="number" step="any" name="diabetes_pedigree_function" placeholder="e.g. 0.47" min="0.0778" max="2.42" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Score: 0.078 – 2.42 · Normal: 0.2 – 0.6</div>
+                            </div>
+
+                            <div class="field-wrap">
+                                <div class="field-label">Age <span class="hint">years</span></div>
+                                <div class="field-inner">
+                                    <span class="field-icon">🎂</span>
+                                    <input type="number" name="age" placeholder="e.g. 35" min="21" max="110" required>
+                                </div>
+                                <div class="range-hint"><div class="range-dot"></div>Must be 21 or older</div>
+                            </div>
+
+                        </div><div class="form-actions" style="margin-top:28px; padding:0; border-top:none; gap:12px;">
+                            <button type="submit" class="btn-predict" id="predictBtn">
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                                <span id="btnLabel">Run Prediction</span>
+                                <div class="spinner" id="spinner"></div>
+                            </button>
+
+                            {% if user.is_authenticated %}
+                            <a href="{% url 'dashboard' %}" class="btn-outline">
+                            {% else %}
+                            <button type="button" class="btn-outline" onclick="openModal()">
+                            {% endif %}
+                                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                Previous Results
+                            {% if user.is_authenticated %}</a>{% else %}</button>{% endif %}
+
+                            <button type="reset" class="btn-reset" id="resetBtn">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <polyline points="1 4 1 10 7 10"/>
+                                    <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+                                </svg>
+                                Reset
+                            </button>
+                        </div>
+
+                    </form>
                 </div>
-            </form>
+            </div>
+
+        </div></div></div><div class="modal-overlay" id="guestModal">
+    <div class="modal-box">
+        <div class="modal-icon">🔒</div>
+        <h3>Sign in to view history</h3>
+        <p>To save and revisit your prediction history you need an account. It's free and takes 30 seconds.</p>
+        <div class="modal-actions">
+            <a href="{% url 'login' %}" class="modal-btn-primary" style="color:#fff !important;">Sign In</a>
+            <button class="modal-btn-close" onclick="closeModal()">Maybe later</button>
         </div>
     </div>
+</div>
 
-    <script>
-        function togglePregnanciesField() {
-            const gender = document.getElementById("gender").value;
-            const pregnanciesContainer = document.getElementById("pregnancies-container");
-            const pregnanciesInput = document.getElementById("pregnancies");
+<script>
+    /* ── BUG 2 FIX: load topbar date ── */
+    document.getElementById('currentDate').textContent =
+        new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-            if (gender === "female") {
-                pregnanciesContainer.style.display = "block";
-                pregnanciesInput.required = true;
-            } else {
-                pregnanciesContainer.style.display = "none";
-                pregnanciesInput.required = false;
-                pregnanciesInput.value = ''; 
-            }
+    /* ── pregnancies toggle ── */
+    function togglePregnancies() {
+        const gender = document.getElementById('gender').value;
+        const wrap   = document.getElementById('pregnancies-wrap');
+        const input  = document.getElementById('pregnancies');
+        if (gender === 'female') {
+            wrap.classList.add('show');
+            wrap.style.display = 'flex';
+            input.required = true;
+        } else {
+            wrap.style.display = 'none';
+            wrap.classList.remove('show');
+            input.required = false;
+            input.value = '';
         }
-    </script>
+    }
+
+    /* ── loading state ── */
+    document.getElementById('predictForm').addEventListener('submit', function() {
+        const btn     = document.getElementById('predictBtn');
+        const label   = document.getElementById('btnLabel');
+        const spinner = document.getElementById('spinner');
+        btn.disabled        = true;
+        label.style.display = 'none';
+        spinner.style.display = 'block';
+        setTimeout(() => {
+            btn.disabled        = false;
+            label.style.display = '';
+            spinner.style.display = 'none';
+        }, 5000);
+    });
+
+    /* ADD THIS */
+document.getElementById('resetBtn').addEventListener('click', function() {
+    const wrap  = document.getElementById('pregnancies-wrap');
+    const input = document.getElementById('pregnancies');
+    const gender = document.getElementById('gender');
+    if (wrap)  { wrap.style.display = 'none'; wrap.classList.remove('show'); }
+    if (input) { input.required = false; input.value = ''; }
+    if (gender){ gender.value = ''; }
+});
+
+    /* ── modal ── */
+    function openModal()  { document.getElementById('guestModal').classList.add('open'); }
+    function closeModal() { document.getElementById('guestModal').classList.remove('open'); }
+    document.getElementById('guestModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+
 </body>
 </html>

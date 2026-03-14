@@ -7,7 +7,7 @@ import joblib
 import os
 
 # Load the Dataset
-df = pd.read_csv('C:\\CINS 490 Project\\diabetes.csv')
+df = pd.read_csv('diabetes.csv')
 
 # Columns where a value of 0 is considered invalid and should be treated as missing
 invalid_cols = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']

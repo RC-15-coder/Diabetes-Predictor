@@ -76,3 +76,8 @@ model_path = os.path.join('predictor', 'ml_model', 'best_lgb_model.pkl')
 os.makedirs(os.path.dirname(model_path), exist_ok=True)
 joblib.dump(lgbm_model, model_path)
 
+
+
+
+
+

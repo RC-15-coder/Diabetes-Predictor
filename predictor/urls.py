@@ -21,4 +21,6 @@ urlpatterns = [
 
     # Diabetes prediction form route
     path('predict/', views.predict_diabetes, name='predict_diabetes'),
+    path('predict/guest/', views.predict_diabetes_guest, name='predict_diabetes_guest'),  # ← added
+
 ]

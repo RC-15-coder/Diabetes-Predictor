@@ -1,210 +1,1614 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Diabetes Prediction</title>
-    {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — DiabetesAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ffe4b5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      
+      :root {
+        --teal: #0d9488;
+        --teal-dark: #0f766e;
+        --teal-glow: rgba(13, 148, 136, 0.4);
+        --teal-faint: rgba(13, 148, 136, 0.08);
+        --navy: #050d19;
+        --navy-mid: #081320;
+        --navy-card: #0c1827;
+        --navy-sidebar: #070f1c;
+        --white: #ffffff;
+        --text-dim: #3d5470;
+        --text-mid: #6b88a8;
+        --text-light: #a8c0d6;
+        --border: rgba(255, 255, 255, 0.055);
+        --border-mid: rgba(255, 255, 255, 0.1);
+        --green: #22c55e;
+        --red: #f87171;
+        --amber: #f59e0b;
+        --sidebar-w: 240px;
+      }
+      
+      html,
+      body {
+        height: 100%;
+        font-family: 'Outfit', sans-serif;
+        background: var(--navy);
+        color: var(--white);
+        overflow: hidden;
+      }
+      
+      /* ════════════════════════════════
+                                                           ANIMATED BACKGROUND
+                                                        ════════════════════════════════ */
+      .bg-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background: radial-gradient(ellipse 70% 60% at 20% 10%, rgba(13, 148, 136, 0.13) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 85% 90%, rgba(10, 25, 70, 0.8) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 75% 5%, rgba(13, 148, 136, 0.07) 0%, transparent 50%);
+      }
+      
+      /* floating orbs */
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(80px);
+      }
+      .orb-1 {
+        width: 380px;
+        height: 380px;
+        background: rgba(13, 148, 136, 0.12);
+        top: -80px;
+        left: 180px;
+        animation: orb-drift 14s ease-in-out infinite alternate;
+      }
+      .orb-2 {
+        width: 300px;
+        height: 300px;
+        background: rgba(30, 58, 138, 0.15);
+        bottom: -60px;
+        right: 200px;
+        animation: orb-drift 18s ease-in-out infinite alternate-reverse;
+      }
+      @keyframes orb-drift {
+        from {
+          transform: translate(0, 0) scale(1);
         }
-
-        .main-container {
-            display: flex;
-            width: 800px;
-            height: 670px;
-            background-color: #fdf1db;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        to {
+          transform: translate(40px, 30px) scale(1.08);
         }
-
-        .popup-message {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            animation: fade-out 5s forwards;
+      }
+      
+      /* grain */
+      .grain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        opacity: 0.55;
+      }
+      
+      /* ════════════════════════════════
+                                                           LAYOUT: SIDEBAR + MAIN
+                                                        ════════════════════════════════ */
+      .layout {
+        display: flex;
+        height: 100vh;
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* ─────────── SIDEBAR ─────────── */
+      .sidebar {
+        width: var(--sidebar-w);
+        flex-shrink: 0;
+        background: var(--navy-sidebar);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 28px 20px;
+        position: relative;
+        overflow: hidden;
+        animation: slideInLeft 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+      }
+      
+      @keyframes slideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-24px);
         }
-
-        @keyframes fade-out {
-            0% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
+        to {
+          opacity: 1;
+          transform: translateX(0);
         }
-
-        .image-section, .form-section {
-            width: 50%;
-            padding: 20px;
-            box-sizing: border-box;
+      }
+      
+      .sidebar::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: linear-gradient(to top, rgba(13, 148, 136, 0.06), transparent);
+        pointer-events: none;
+      }
+      
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 28px;
+      }
+      
+      .brand-icon {
+        width: 38px;
+        height: 38px;
+        background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        box-shadow: 0 4px 16px rgba(13, 148, 136, 0.45);
+      }
+      
+      .brand-name {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--white);
+        letter-spacing: -0.3px;
+      }
+      .brand-name span {
+        color: var(--teal);
+      }
+      
+      /* nav items */
+      .nav-section-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-dim);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        padding: 0 8px;
+      }
+      
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-mid);
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        font-family: 'Outfit', sans-serif;
+        transition: background 0.2s, color 0.2s;
+        margin-bottom: 2px;
+      }
+      .nav-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-light);
+      }
+      .nav-item.active {
+        background: rgba(13, 148, 136, 0.12);
+        color: var(--white);
+        border: 1px solid rgba(13, 148, 136, 0.2);
+      }
+      .nav-item.active svg {
+        color: var(--teal);
+      }
+      .nav-item svg {
+        flex-shrink: 0;
+      }
+      .nav-spacer {
+        flex: 1;
+      }
+      
+      /* user card at bottom of sidebar */
+      .sidebar-user {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-mid);
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--teal), #1e3a8a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.4);
+      }
+      
+      .user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .user-info strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--white);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-info span {
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+      
+      .sidebar-logout {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        border-radius: 9px;
+        background: transparent;
+        border: 1px solid rgba(248, 113, 113, 0.2);
+        font-family: 'Outfit', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #f87171;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+        transition: all 0.2s;
+      }
+      .sidebar-logout:hover {
+        background: rgba(248, 113, 113, 0.07);
+        border-color: rgba(248, 113, 113, 0.4);
+      }
+      
+      /* ─────────── MAIN CONTENT ─────────── */
+      .main {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .main::-webkit-scrollbar {
+        width: 5px;
+      }
+      .main::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .main::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+      }
+      
+      /* top bar */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 40px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(5, 13, 25, 0.7);
+        backdrop-filter: blur(16px);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        animation: fadeDown 0.6s 0.15s both;
+      }
+      
+      @keyframes fadeDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-
-        .image-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        .image-section img {
-            width: 100%;
-            max-width: 250px;
-            height: auto;
-            border-radius: 8px;
+      }
+      
+      .topbar-left h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--white);
+        letter-spacing: -0.4px;
+      }
+      .topbar-left p {
+        font-size: 12.5px;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .live-badge {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(34, 197, 94, 0.08);
+        border: 1px solid rgba(34, 197, 94, 0.2);
+        border-radius: 99px;
+        padding: 5px 12px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--green);
+      }
+      .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: live-pulse 1.6s ease-in-out infinite;
+      }
+      @keyframes live-pulse {
+        0%,
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
         }
-
-        .image-section h1 {
-            font-size: 24px;
-            color: #f59b42;
-            margin-top: 20px;
+        50% {
+          opacity: 0.7;
+          box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
         }
-
-        .image-section p {
-            font-size: 14px;
-            color: #555;
-            text-align: center;
-            margin-top: 10px;
+      }
+      
+      .btn-predict {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+        border: none;
+        border-radius: 10px;
+        font-family: 'Outfit', sans-serif;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--white);
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 4px 18px rgba(13, 148, 136, 0.4);
+        transition: transform 0.15s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-predict::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transform: skewX(-20deg);
+        animation: shimmer 3.5s ease-in-out infinite 1.5s;
+      }
+      @keyframes shimmer {
+        0% {
+          left: -100%;
         }
-
-        .form-section {
-            background-color: #fff8e1;
-            border-radius: 10px;
-            padding: 10px 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        40%,
+        100% {
+          left: 150%;
         }
-
-        .form-section h2 {
-            color: #ff9900;
-            font-size: 20px;
-            text-align: center;
-            margin-bottom: 10px;
+      }
+      .btn-predict:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 26px rgba(13, 148, 136, 0.5);
+      }
+      
+      /* ── page body ── */
+      .content {
+        padding: 32px 40px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      
+      /* ── toast ── */
+      .toast {
+        position: fixed;
+        top: 80px;
+        right: 24px;
+        z-index: 999;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 13px;
+        color: var(--green);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        animation: toastIn 0.4s ease, toastOut 0.5s ease 4.5s forwards;
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
         }
-
-        .form-section p {
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #555;
+        to {
+          opacity: 1;
+          transform: translateX(0);
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+      }
+      @keyframes toastOut {
+        to {
+          opacity: 0;
+          transform: translateX(20px);
         }
-
-        table th, table td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: center;
+      }
+      
+      /* ════════════════════════════════
+                                                           HERO GREETING BANNER
+                                                        ════════════════════════════════ */
+      .hero-banner {
+        background: linear-gradient(120deg, rgba(13, 148, 136, 0.15) 0%, rgba(12, 24, 39, 0.6) 60%), var(--navy-card);
+        border: 1px solid rgba(13, 148, 136, 0.2);
+        border-radius: 20px;
+        padding: 28px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+        position: relative;
+        animation: fadeUp 0.6s 0.2s both;
+      }
+      
+      .hero-banner::before {
+        content: '';
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(13, 148, 136, 0.18) 0%, transparent 70%);
+        pointer-events: none;
+      }
+      
+      .banner-text .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(13, 148, 136, 0.15);
+        border: 1px solid rgba(13, 148, 136, 0.3);
+        border-radius: 99px;
+        padding: 3px 11px;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--teal);
+        letter-spacing: 0.9px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      
+      .banner-text h1 {
+        font-family: 'DM Serif Display', serif;
+        font-size: clamp(22px, 2.5vw, 30px);
+        color: var(--white);
+        line-height: 1.2;
+        letter-spacing: -0.4px;
+      }
+      .banner-text h1 em {
+        font-style: italic;
+        color: var(--teal);
+      }
+      .banner-text p {
+        font-size: 13.5px;
+        color: var(--text-mid);
+        margin-top: 6px;
+      }
+      
+      /* mini ECG in banner */
+      .banner-ecg {
+        flex-shrink: 0;
+        opacity: 0.7;
+      }
+      .ecg-svg {
+        width: 180px;
+        height: 48px;
+        overflow: visible;
+      }
+      .ecg-path {
+        fill: none;
+        stroke: var(--teal);
+        stroke-width: 1.8;
+        filter: drop-shadow(0 0 5px rgba(13, 148, 136, 0.8));
+        /* FIX 1: Increased dasharray from 600 to 1000 so the line draws entirely */
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: ecg-draw 2.2s ease forwards 0.8s;
+      }
+      @keyframes ecg-draw {
+        to {
+          stroke-dashoffset: 0;
         }
-
-        button {
-            background-color: #ff9900;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 20px;
-            display: block;
-            text-align: center;
-            text-decoration: none;
+      }
+      
+      .ecg-dot {
+        fill: var(--teal);
+        filter: drop-shadow(0 0 4px rgba(13, 148, 136, 1));
+      }
+      
+      /* ════════════════════════════════
+                                                           STAT CARDS
+                                                        ════════════════════════════════ */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        animation: fadeUp 0.6s 0.3s both;
+      }
+      
+      .stat-card {
+        background: var(--navy-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px 22px;
+        position: relative;
+        overflow: hidden;
+        cursor: default;
+        transition: border-color 0.25s, transform 0.2s, box-shadow 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      }
+      .stat-card.teal:hover {
+        border-color: rgba(13, 148, 136, 0.4);
+      }
+      .stat-card.green:hover {
+        border-color: rgba(34, 197, 94, 0.35);
+      }
+      .stat-card.red:hover {
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+      .stat-card.amber:hover {
+        border-color: rgba(245, 158, 11, 0.35);
+      }
+      
+      .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        border-radius: 16px 16px 0 0;
+      }
+      .stat-card.teal::before {
+        background: linear-gradient(90deg, var(--teal), transparent);
+      }
+      .stat-card.green::before {
+        background: linear-gradient(90deg, var(--green), transparent);
+      }
+      .stat-card.red::before {
+        background: linear-gradient(90deg, var(--red), transparent);
+      }
+      .stat-card.amber::before {
+        background: linear-gradient(90deg, var(--amber), transparent);
+      }
+      
+      .stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+      
+      .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+      }
+      .icon-teal {
+        background: rgba(13, 148, 136, 0.12);
+      }
+      .icon-green {
+        background: rgba(34, 197, 94, 0.1);
+      }
+      .icon-red {
+        background: rgba(248, 113, 113, 0.1);
+      }
+      .icon-amber {
+        background: rgba(245, 158, 11, 0.1);
+      }
+      
+      .stat-trend {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 99px;
+      }
+      .trend-up {
+        background: rgba(34, 197, 94, 0.1);
+        color: var(--green);
+      }
+      .trend-down {
+        background: rgba(248, 113, 113, 0.1);
+        color: var(--red);
+      }
+      .trend-neu {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--amber);
+      }
+      
+      .stat-num {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--white);
+        letter-spacing: -2px;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: var(--text-dim);
+        margin-top: 4px;
+      }
+      
+      /* sparkline canvas in card */
+      .sparkline-wrap {
+        margin-top: 14px;
+        height: 36px;
+      }
+      .sparkline-wrap canvas {
+        width: 100% !important;
+        height: 36px !important;
+      }
+      
+      /* ════════════════════════════════
+                                                           MIDDLE ROW: chart + table
+                                                        ════════════════════════════════ */
+      .mid-row {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 20px;
+        animation: fadeUp 0.6s 0.4s both;
+      }
+      
+      /* donut chart card */
+      .chart-card {
+        background: var(--navy-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .card-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--white);
+        letter-spacing: -0.2px;
+        margin-bottom: 4px;
+      }
+      .card-sub {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-bottom: 20px;
+      }
+      
+      .donut-wrap {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      
+      .donut-wrap canvas {
+        max-width: 160px;
+        max-height: 160px;
+      }
+      
+      .donut-center {
+        position: absolute;
+        text-align: center;
+        pointer-events: none;
+      }
+      .donut-center strong {
+        display: block;
+        font-size: 26px;
+        font-weight: 800;
+        color: var(--white);
+        letter-spacing: -1px;
+      }
+      .donut-center span {
+        font-size: 10px;
+        color: var(--text-dim);
+      }
+      
+      .legend {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12.5px;
+        color: var(--text-mid);
+      }
+      .legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .legend-item strong {
+        color: var(--white);
+        font-size: 14px;
+        margin-left: auto;
+      }
+      
+      /* ════════════════════════════════
+                                                           HISTORY TABLE CARD
+                                                        ════════════════════════════════ */
+      .table-card {
+        background: var(--navy-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .table-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      
+      .table-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .count-badge {
+        background: rgba(13, 148, 136, 0.12);
+        border: 1px solid rgba(13, 148, 136, 0.22);
+        border-radius: 99px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--teal);
+      }
+      
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-mid);
+        border-radius: 9px;
+        padding: 7px 13px;
+        transition: border-color 0.2s;
+      }
+      .search-box:focus-within {
+        border-color: rgba(13, 148, 136, 0.4);
+      }
+      .search-box input {
+        background: none;
+        border: none;
+        outline: none;
+        font-family: 'Outfit', sans-serif;
+        font-size: 13px;
+        color: var(--white);
+        width: 150px;
+      }
+      .search-box input::placeholder {
+        color: var(--text-dim);
+      }
+      
+      /* filter pills */
+      .filter-pills {
+        display: flex;
+        gap: 6px;
+        padding: 12px 24px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      
+      .pill {
+        padding: 4px 13px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border-mid);
+        color: var(--text-mid);
+        background: transparent;
+        font-family: 'Outfit', sans-serif;
+        transition: all 0.2s;
+      }
+      .pill:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        color: var(--white);
+      }
+      .pill.active {
+        background: rgba(13, 148, 136, 0.12);
+        border-color: rgba(13, 148, 136, 0.3);
+        color: var(--teal);
+      }
+      .pill.pill-red.active {
+        background: rgba(248, 113, 113, 0.1);
+        border-color: rgba(248, 113, 113, 0.3);
+        color: var(--red);
+      }
+      .pill.pill-green.active {
+        background: rgba(34, 197, 94, 0.1);
+        border-color: rgba(34, 197, 94, 0.3);
+        color: var(--green);
+      }
+      
+      .table-scroll {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .table-scroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .table-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+      }
+      
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      thead {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+      thead tr {
+        background: rgba(7, 15, 28, 0.96);
+        backdrop-filter: blur(12px);
+      }
+      thead th {
+        padding: 12px 24px;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--text-dim);
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+      }
+      
+      tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+        animation: rowIn 0.4s both;
+      }
+      tbody tr:nth-child(1) {
+        animation-delay: 0.05s;
+      }
+      tbody tr:nth-child(2) {
+        animation-delay: 0.1s;
+      }
+      tbody tr:nth-child(3) {
+        animation-delay: 0.15s;
+      }
+      tbody tr:nth-child(4) {
+        animation-delay: 0.2s;
+      }
+      tbody tr:nth-child(5) {
+        animation-delay: 0.25s;
+      }
+      
+      @keyframes rowIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
         }
-
-        button:hover {
-            background-color: #cc7a00;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        .actions {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 30px; 
+      }
+      
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: rgba(13, 148, 136, 0.045);
+      }
+      
+      tbody td {
+        padding: 14px 24px;
+        font-size: 13.5px;
+        color: var(--text-mid);
+      }
+      
+      .td-num {
+        font-size: 11px;
+        color: var(--text-dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .td-date {
+        font-variant-numeric: tabular-nums;
+        color: var(--text-light);
+      }
+      
+      /* risk indicator bar */
+      .risk-bar-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .risk-bar {
+        width: 60px;
+        height: 4px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.07);
+        overflow: hidden;
+      }
+      .risk-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      
+      /* result badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 11.5px;
+        font-weight: 600;
+      }
+      .badge-red {
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+        color: var(--red);
+      }
+      .badge-green {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        color: var(--green);
+      }
+      .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+      }
+      .badge-red .badge-dot {
+        background: var(--red);
+      }
+      .badge-green .badge-dot {
+        background: var(--green);
+      }
+      
+      /* empty state */
+      .empty-state {
+        padding: 56px 24px;
+        text-align: center;
+      }
+      .empty-icon {
+        font-size: 38px;
+        margin-bottom: 14px;
+        opacity: 0.35;
+      }
+      .empty-state p {
+        font-size: 13.5px;
+        color: var(--text-dim);
+      }
+      
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-
-        .actions form, .actions a {
-            flex: none;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-                height: auto;
-            }
-
-            .image-section, .form-section {
-                width: 100%;
-            }
-
-            .form-section {
-                padding: 15px;
-            }
+      }
+      
+      /* ── responsive ── */
+      /* ── responsive ── */
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+          padding-bottom: 70px;
         }
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .mid-row {
+          grid-template-columns: 1fr;
+        }
+        .content {
+          padding: 24px 20px 40px;
+        }
+        .topbar {
+          padding: 16px 20px;
+        }
+      
+        .sidebar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 70px;
+          flex-direction: row;
+          justify-content: space-around;
+          align-items: center;
+          padding: 0 10px;
+          border-right: none;
+          border-top: 1px solid var(--border);
+          background: rgba(7, 15, 28, 0.95);
+          backdrop-filter: blur(12px);
+          z-index: 100;
+          animation: none;
+        }
+      
+        .sidebar::before,
+        .sidebar-brand,
+        .nav-section-label,
+        .nav-spacer,
+        .sidebar-user {
+          display: none;
+        }
+      
+        .nav-item {
+          flex-direction: column;
+          gap: 4px;
+          width: auto;
+          padding: 8px 12px;
+          margin: 0;
+          font-size: 10px;
+          background: transparent !important;
+          border: none !important;
+        }
+      
+        .sidebar-logout {
+          flex-direction: column;
+          gap: 4px;
+          width: auto;
+          padding: 8px 12px;
+          margin: 0;
+          font-size: 10px;
+          border: none;
+          background: transparent !important;
+        }
+      
+        .nav-item.active {
+          color: var(--teal);
+        }
+        .nav-item.active svg {
+          filter: drop-shadow(0 0 4px var(--teal));
+        }
+      
+        .sidebar form {
+          margin: 0;
+          display: flex;
+          align-items: center;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="bg-layer"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="grain"></div>
+
     {% if messages %}
-        <div class="popup-message">
-            {% for message in messages %}
-                {{ message }}
-            {% endfor %}
-        </div>
+      <div class="toast">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+      </div>
     {% endif %}
-    <div class="main-container">    
-        <!-- Image Section -->
-        <div class="image-section">
-            <img src="{% static 'images/doctor_testing.jpg' %}" alt="Doctor and Patient">
-            <h1>Welcome, {{ user.username }}</h1>
-            <b><p>Your Diabetes Prediction History</b></p>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
+              <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" />
+              <circle cx="20" cy="10" r="2" />
+            </svg>
+          </div>
+          <div class="brand-name">
+            Diabetes<span>AI</span>
+          </div>
         </div>
 
-        <!-- Form Section -->
-        <div class="form-section">
-            <h2>Your Predictions</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Prediction</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for prediction in predictions %}
-                        <tr>
-                            <td>{{ prediction.timestamp|date:"Y-m-d" }}</td>
-                            <td>{{ prediction.prediction_result }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="nav-section-label">Menu</div>
+        <a href="#" class="nav-item active">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>Dashboard
+        </a>
+        <div class="nav-spacer"></div>
 
-            <!-- Actions Section -->
-            <div class="actions">
-                <a href="{% url 'predict_diabetes' %}" class="button" style="text-decoration: none;">
-                    <button>Make a New Prediction</button>
-                </a>
-                <!-- Logout Button -->
-                <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit">Logout</button>
-                </form>
+        <div class="sidebar-user">
+          <div class="user-avatar">{{ user.username|slice:':1'|upper }}</div>
+          <div class="user-info">
+            <strong>{{ user.username }}</strong>
+            <span>Patient Account</span>
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'logout' %}" style="margin:0">
+          {% csrf_token %}
+          <button type="submit" class="sidebar-logout">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>Sign Out
+          </button>
+        </form>
+      </aside>
+
+      <div class="main">
+        <div class="topbar">
+          <div class="topbar-left">
+            <h2>Health Dashboard</h2>
+            <p id="currentDate">Loading date…</p>
+          </div>
+          <div class="topbar-right">
+            <div class="live-badge">
+              <div class="live-dot"></div>Model Active
             </div>
+            <a href="{% url 'predict_diabetes' %}" class="btn-predict">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>New Prediction
+            </a>
+          </div>
         </div>
+
+        <div class="content">
+          <div class="hero-banner">
+            <div class="banner-text">
+              <div class="tag">
+                <div class="live-dot" style="width:5px;height:5px;background:var(--teal);animation:none"></div>ML Engine Ready
+              </div>
+              <h1>Welcome back, <em>{{ user.username }}</em></h1>
+              <p>Your personal diabetes risk monitor. All predictions are powered by a ML model.</p>
+            </div>
+            <div class="banner-ecg">
+              <svg class="ecg-svg" viewBox="0 0 360 48" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="eg" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#0D9488" stop-opacity="0.1" />
+                    <stop offset="50%" stop-color="#0D9488" stop-opacity="1" />
+                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0.2" />
+                  </linearGradient>
+                </defs>
+                <path class="ecg-path" stroke="url(#eg)" d="M0,24 L30,24 L36,24 L39,18 L42,24 L48,24
+                                 L51,24 L54,6 L57,42 L60,14 L63,24
+                                 L80,24 L86,24 L89,18 L92,24 L98,24
+                                 L101,24 L104,6 L107,42 L110,14 L113,24
+                                 L130,24 L136,24 L139,18 L142,24 L148,24
+                                 L151,24 L154,6 L157,42 L160,14 L163,24
+                                 L180,24 L186,24 L189,18 L192,24 L198,24
+                                 L201,24 L204,6 L207,42 L210,14 L213,24
+                                 L230,24 L236,24 L239,18 L242,24 L248,24
+                                 L251,24 L254,6 L257,42 L260,14 L263,24
+                                 L280,24 L286,24 L289,18 L292,24 L298,24
+                                 L301,24 L304,6 L307,42 L310,14 L313,24
+                                 L330,24 L360,24" />
+                <circle id="bannerDot" r="3.5" cx="0" cy="24" fill="#0D9488" style="filter:drop-shadow(0 0 5px rgba(13,148,136,1))" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card teal">
+              <div class="stat-top">
+                <div class="stat-icon icon-teal">📋</div>
+                <span class="stat-trend trend-neu">All time</span>
+              </div>
+              <div class="stat-num" data-target="{{ predictions|length }}" data-dur="1400">0</div>
+              <div class="stat-label">Total predictions</div>
+              <div class="sparkline-wrap">
+                <canvas id="spark1"></canvas>
+              </div>
+            </div>
+            <div class="stat-card red">
+              <div class="stat-top">
+                <div class="stat-icon icon-red">⚠️</div>
+                <span class="stat-trend trend-down" id="diabPct">—</span>
+              </div>
+              <div class="stat-num" id="diabCount" data-dur="1600">—</div>
+              <div class="stat-label">Diabetic results</div>
+              <div class="sparkline-wrap">
+                <canvas id="spark2"></canvas>
+              </div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-top">
+                <div class="stat-icon icon-green">✅</div>
+                <span class="stat-trend trend-up" id="nonDiabPct">—</span>
+              </div>
+              <div class="stat-num" id="nonDiabCount" data-dur="1600">—</div>
+              <div class="stat-label">Non-diabetic results</div>
+              <div class="sparkline-wrap">
+                <canvas id="spark3"></canvas>
+              </div>
+            </div>
+            <div class="stat-card amber">
+              <div class="stat-top">
+                <div class="stat-icon icon-amber">⚡</div>
+                <span class="stat-trend trend-neu">&lt;1s</span>
+              </div>
+              <div class="stat-num">ML</div>
+              <div class="stat-label">LightGBM powered</div>
+              <div class="sparkline-wrap">
+                <canvas id="spark4"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="mid-row">
+            <div class="chart-card">
+              <div class="card-title">Risk Distribution</div>
+              <div class="card-sub">Based on your predictions</div>
+              <div class="donut-wrap">
+                <canvas id="donutChart"></canvas>
+                <div class="donut-center">
+                  <strong id="donutTotal">0</strong>
+                  <span>total</span>
+                </div>
+              </div>
+              <div class="legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--red)"></div>Diabetic
+                  <strong id="legendDiab">0</strong>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--green)"></div>Non-Diabetic
+                  <strong id="legendNonDiab">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-topbar">
+                <div class="table-topbar-left">
+                  <div class="card-title" style="margin:0">Prediction History</div>
+                  <span class="count-badge">{{ predictions|length }} records</span>
+                </div>
+                <div class="search-box">
+                  <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:var(--text-dim)">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input type="text" id="searchInput" placeholder="Filter…" oninput="filterTable()" />
+                </div>
+              </div>
+
+              <div class="filter-pills">
+                <button class="pill active" onclick="filterPill(this,'all')">All</button>
+                <button class="pill pill-red" onclick="filterPill(this,'diabetic')">Diabetic</button>
+                <button class="pill pill-green" onclick="filterPill(this,'non')">Non-Diabetic</button>
+              </div>
+
+              <div class="table-scroll">
+                {% if predictions %}
+                  <table id="predTable">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Result</th>
+                        <th>Risk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for prediction in predictions %}
+                        <tr data-result="{{ prediction.prediction_result }}">
+                          <td class="td-num">{{ forloop.counter }}</td>
+                          <td class="td-date local-date" data-utc="{{ prediction.timestamp|date:'c' }}">{{ prediction.timestamp|date:'j M, Y' }}</td>
+                          <td class="td-date local-time" data-utc="{{ prediction.timestamp|date:'c' }}">{{ prediction.timestamp|date:'h:i A' }}</td>
+                          <td>
+                            {% if 'Non' in prediction.prediction_result %}
+                              <span class="badge badge-green">
+                                <span class="badge-dot"></span>
+                                {{ prediction.prediction_result }}
+                              </span>
+                            {% else %}
+                              <span class="badge badge-red">
+                                <span class="badge-dot"></span>
+                                {{ prediction.prediction_result }}
+                              </span>
+                            {% endif %}
+                          </td>
+                          <td>
+                            <div class="risk-bar-wrap">
+                              <div class="risk-bar">
+                                {% if 'Non' in prediction.prediction_result %}
+                                  <div class="risk-fill" style="width:20%;background:var(--green)"></div>
+                                {% else %}
+                                  <div class="risk-fill" style="width:80%;background:var(--red)"></div>
+                                {% endif %}
+                              </div>
+                              <span style="font-size:11px;color:var(--text-dim)">
+                                {% if 'Non' in prediction.prediction_result %}
+                                  Low
+                                {% else %}
+                                  High
+                                {% endif %}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% else %}
+                  <div class="empty-state">
+                    <div class="empty-icon">🔬</div>
+                    <p>No predictions yet. Make your first prediction above!</p>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-</body>
+
+    <script>
+      /* ── Moved array definition to global scope for search/filter access ── */
+      let tableRows = []
+      
+      /* ── date ── */
+      document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      
+      /* ── animate count ── */
+      function animCount(el, target, dur) {
+        if (!el || isNaN(target)) return
+        const start = performance.now()
+        const ease = (t) => 1 - Math.pow(1 - t, 3)
+        ;(function step(now) {
+          const p = Math.min((now - start) / dur, 1)
+          el.textContent = Math.floor(ease(p) * target)
+          if (p < 1) requestAnimationFrame(step)
+          else el.textContent = target
+        })(start)
+      }
+      
+      window.addEventListener('load', () => {
+        /* Initialize global tableRows array once DOM is loaded */
+        tableRows = Array.from(document.querySelectorAll('#predTable tbody tr'))
+      
+        /* ── count diabetic vs non-diabetic ── */
+        let diab = 0,
+          nonDiab = 0
+        tableRows.forEach((r) => {
+          r.dataset.result.includes('Non') ? nonDiab++ : diab++
+        })
+        const total = diab + nonDiab
+      
+        /* stat card counters */
+        document.querySelectorAll('[data-target]').forEach((el) => {
+          animCount(el, parseInt(el.dataset.target), parseInt(el.dataset.dur) || 1400)
+        })
+        setTimeout(() => {
+          animCount(document.getElementById('diabCount'), diab, 1600)
+          animCount(document.getElementById('nonDiabCount'), nonDiab, 1600)
+          document.getElementById('diabPct').textContent = total ? Math.round((diab / total) * 100) + '%' : '0%'
+          document.getElementById('nonDiabPct').textContent = total ? Math.round((nonDiab / total) * 100) + '%' : '0%'
+          document.getElementById('legendDiab').textContent = diab
+          document.getElementById('legendNonDiab').textContent = nonDiab
+          animCount(document.getElementById('donutTotal'), total, 1200)
+        }, 300)
+      
+        /* ── donut chart ── */
+        const dCtx = document.getElementById('donutChart').getContext('2d')
+        new Chart(dCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Diabetic', 'Non-Diabetic'],
+            datasets: [
+              {
+                data: [diab || 0.001, nonDiab || 0.001],
+                backgroundColor: ['rgba(248,113,113,0.85)', 'rgba(34,197,94,0.85)'],
+                borderColor: ['rgba(248,113,113,0.3)', 'rgba(34,197,94,0.3)'],
+                borderWidth: 1,
+                hoverOffset: 6
+              }
+            ]
+          },
+          options: {
+            cutout: '72%',
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false }
+            },
+            animation: { animateRotate: true, duration: 1200 }
+          }
+        })
+      
+        /* ── sparklines ── */
+        function sparkline(id, data, color) {
+          const ctx = document.getElementById(id)
+          if (!ctx) return
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: data.map((_, i) => i),
+              datasets: [
+                {
+                  data,
+                  borderColor: color,
+                  borderWidth: 1.8,
+                  pointRadius: 0,
+                  tension: 0.4,
+                  fill: true,
+                  backgroundColor: color.replace('1)', '0.1)')
+                }
+              ]
+            },
+            options: {
+              responsive: false,
+              animation: { duration: 1200 },
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+              scales: { x: { display: false }, y: { display: false } }
+            }
+          })
+        }
+      
+        sparkline('spark1', [2, 3, 2, 4, 3, 5, 4, 6, total || 1], 'rgba(13,148,136,1)')
+        sparkline('spark2', [1, 2, 1, 2, 1, 3, diab || 0, diab || 0], 'rgba(248,113,113,1)')
+        sparkline('spark3', [1, 1, 2, 1, 3, 2, 3, nonDiab || 0], 'rgba(34,197,94,1)')
+        sparkline('spark4', [0.9, 0.85, 0.9, 0.88, 0.91, 0.9, 0.92, 0.9], 'rgba(245,158,11,1)')
+      
+        /* ── FIX 2: SMOOTH OPACITY FOR ECG DOT ── */
+        const path = document.querySelector('.ecg-path')
+        const dot = document.getElementById('bannerDot')
+      
+        function travelDot() {
+          const len = path.getTotalLength()
+          let start = null
+          const dur = 2800
+      
+          ;(function step(ts) {
+            if (!start) start = ts
+            const p = Math.min((ts - start) / dur, 1)
+            const pt = path.getPointAtLength(p * len)
+      
+            dot.setAttribute('cx', pt.x)
+            dot.setAttribute('cy', pt.y)
+      
+            // Smoothly fade dot in at start and out at the very end
+            if (p < 0.05) {
+              dot.style.opacity = p / 0.05
+            } else if (p > 0.95) {
+              dot.style.opacity = (1 - p) / 0.05
+            } else {
+              dot.style.opacity = 1
+            }
+      
+            if (p < 1) {
+              requestAnimationFrame(step)
+            } else {
+              setTimeout(travelDot, 400)
+            }
+          })(performance.now())
+        }
+        setTimeout(travelDot, 2300)
+      })
+      
+      /* ── search filter ── */
+      function filterTable() {
+        const q = document.getElementById('searchInput').value.toLowerCase()
+        tableRows.forEach((r) => {
+          r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'
+        })
+      }
+      
+      /* ── pill filter ── */
+      let activePill = 'all'
+      function filterPill(btn, type) {
+        document.querySelectorAll('.pill').forEach((p) => p.classList.remove('active'))
+        btn.classList.add('active')
+        activePill = type
+        tableRows.forEach((r) => {
+          const res = r.dataset.result.toLowerCase()
+          if (type === 'all') r.style.display = ''
+          else if (type === 'diabetic') r.style.display = !res.includes('non') ? '' : 'none'
+          else r.style.display = res.includes('non') ? '' : 'none'
+        })
+      }
+      
+      /* ── toast auto-dismiss ── */
+      setTimeout(() => {
+        const t = document.querySelector('.toast')
+        if (t) t.remove()
+      }, 5000)
+      
+      /* ── convert timestamps to user's local timezone ── */
+      document.querySelectorAll('.local-time').forEach((el) => {
+        const utc = el.dataset.utc
+        if (utc) {
+          const date = new Date(utc)
+          el.textContent = date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          })
+        }
+      })
+      
+      document.querySelectorAll('.local-date').forEach((el) => {
+        const utc = el.dataset.utc
+        if (utc) {
+          const date = new Date(utc)
+          el.textContent = date.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          })
+        }
+      })
+    </script>
+  </body>
 </html>
