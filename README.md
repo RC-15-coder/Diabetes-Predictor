@@ -2,7 +2,7 @@
 
 A full-stack, machine learning-powered web application that predicts diabetes risk based on clinical health parameters. Built with Django and LightGBM, featuring a premium UI designed to match professional SaaS standards.
 
-[![Live Website](https://img.shields.io/badge/Live%20Demo-Visit%20Site-0D9488?style=for-the-badge)](https://raghavchandna.pythonanywhere.com/)
+[![Live Website](https://img.shields.io/badge/Live%20Website-Visit%20Site-0D9488?style=for-the-badge)](https://raghavchandna.pythonanywhere.com/)
 
 ---
 
